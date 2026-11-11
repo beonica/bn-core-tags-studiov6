@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import base64, json, re, subprocess, tempfile
+import base64, hashlib, json, re, subprocess, tempfile
 from pathlib import Path
 import yaml
 
@@ -37,8 +37,11 @@ for api,mode in [('copyFromWindow',0),('setInWindow',1)]:
 assert "createArgumentsQueue('beon', 'beon.q')" in js and all(actual[k][:2] == (True,True) for k in ('beon','beon.q'))
 assert all((root / f).is_file() for f in ('template.tpl','metadata.yaml','LICENSE','README.md'))
 assert len(list(root.rglob('template.tpl'))) == 1
-assert 'Apache License' in (root/'LICENSE').read_text() and 'Version 2.0, January 2004' in (root/'LICENSE').read_text()
-metadata = yaml.safe_load((root/'metadata.yaml').read_text()); assert metadata['homepage'] == 'https://www.beonly.com.br' and metadata['documentation'] == 'https://github.com/beonica/bn.core.tags.studiov6#readme'
+# Fonte: gtm-vendor-templates/example-community-template, commit
+# 206b110b6fdf5e38de72a108d70107a95ec27039, LICENSE, com copyright 2026 Beonly.
+license_bytes = (root/'LICENSE').read_bytes().replace(b'\r\n', b'\n')
+assert hashlib.sha256(license_bytes).hexdigest() == '9ba113e5d4f9a2bfd4666198a854e3416f4d76d925e7c6346cb4d8f5a22f7601'
+metadata = yaml.safe_load((root/'metadata.yaml').read_text()); assert metadata['homepage'] == 'https://www.beonly.com.br' and metadata['documentation'] == 'https://github.com/beonica/bn-core-tags-studiov6#readme'
 sha = metadata['versions'][0]['sha']; assert re.fullmatch(r'[0-9a-f]{40}',sha)
 assert subprocess.check_output(['git','show',f'{sha}:template.tpl'],cwd=root) == (root/'template.tpl').read_bytes()
 print('Estrutura, JSON/YAML, plataforma, ícone, permissões e SHA: OK')
