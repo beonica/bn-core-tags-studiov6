@@ -44,4 +44,6 @@ assert hashlib.sha256(license_bytes).hexdigest() == '9ba113e5d4f9a2bfd4666198a85
 metadata = yaml.safe_load((root/'metadata.yaml').read_text()); assert metadata['homepage'] == 'https://www.beonly.com.br' and metadata['documentation'] == 'https://github.com/beonica/bn-core-tags-studiov6#readme'
 sha = metadata['versions'][0]['sha']; assert re.fullmatch(r'[0-9a-f]{40}',sha)
 assert subprocess.check_output(['git','show',f'{sha}:template.tpl'],cwd=root) == (root/'template.tpl').read_bytes()
+versioned_license = subprocess.check_output(['git','show',f'{sha}:LICENSE'],cwd=root).replace(b'\r\n', b'\n')
+assert versioned_license == license_bytes
 print('Estrutura, JSON/YAML, plataforma, ícone, permissões e SHA: OK')
