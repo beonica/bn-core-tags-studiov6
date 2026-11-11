@@ -23,4 +23,4 @@ Após revisão e validação, publique os arquivos na branch principal de um rep
 
 Para atualizar, faça primeiro um commit contendo o novo `template.tpl`, acrescente seu SHA completo no início de `versions` em `metadata.yaml` com notas de mudança e faça outro commit. Preserve o histórico de versões. Execute `python3 scripts/validate.py` e `python3 scripts/scenarios.py | node scripts/scenarios.js` para as verificações locais; elas não substituem os testes e permissões nativos do GTM. Requerem Python 3, PyYAML, Node.js e ImageMagick para validar a imagem.
 
-A licença Apache 2.0 em `LICENSE` foi copiada da distribuição local SPDX (`/usr/share/licenses/spdx/Apache-2.0.txt`).
+A licença Apache 2.0 em `LICENSE` foi copiada do [exemplo oficial da galeria](https://github.com/gtm-vendor-templates/example-community-template/blob/206b110b6fdf5e38de72a108d70107a95ec27039/LICENSE), com o copyright preenchido para 2026 Beonly.
