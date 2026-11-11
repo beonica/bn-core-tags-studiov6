@@ -1,0 +1,5 @@
+homepage: https://www.beonly.com.br
+documentation: https://github.com/beonica/bn.core.tags.studiov6#readme
+versions:
+  - sha: caded0f0aa98a5971b9ea1df7cb8bafe4c5ff37b
+    changeNotes: Versão inicial do modelo Beonly Studio v6.
