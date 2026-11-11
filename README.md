@@ -1,6 +1,6 @@
 # Beonly Studio v6 — modelo para Google Tag Manager
 
-Modelo de tag web para inicializar a integração Beonly Studio v6. A integração requer uma runtime compatível: **a versão atualmente implantada do loader ainda não lê `window.beonConfig`** e depende de atributos de dados/ID. O modo de rastreamento requer o deploy de uma runtime v6 compatível com esse contrato; enquanto ela não estiver implantada, não use `dry-run` para impedir envio. Confirme a implementação e valide a integração completa em um ambiente controlado antes de ativar em produção. O carregamento bem-sucedido do script chama `gtmOnSuccess`; isso não comprova inicialização nem entrega de rastreamento.
+Modelo de tag web para inicializar a integração Beonly Studio v6. A integração requer loader v6 com suporte a `window.beonConfig` e `trackingMode`. Loaders anteriores podem ignorar o modo; valide a versão antes de confiar no `dry-run`. Confirme a implementação e valide a integração completa em um ambiente controlado antes de ativar em produção. O carregamento bem-sucedido do script chama `gtmOnSuccess`; isso não comprova inicialização nem entrega de rastreamento.
 
 ## Configuração
 
