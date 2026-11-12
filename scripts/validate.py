@@ -10,10 +10,12 @@ sections = dict(zip(pieces[1::2], pieces[2::2]))
 assert set(sections) == {'INFO', 'TEMPLATE_PARAMETERS', 'SANDBOXED_JS_FOR_WEB_TEMPLATE', 'WEB_PERMISSIONS', 'TESTS', 'TERMS_OF_SERVICE', 'NOTES'}
 info = json.loads(sections['INFO']); params = json.loads(sections['TEMPLATE_PARAMETERS']); permissions = json.loads(sections['WEB_PERMISSIONS']); tests = yaml.safe_load(sections['TESTS'])
 assert info['categories'] == ['PERSONALIZATION', 'ANALYTICS']
-assert len(tests['scenarios']) == 5 and tests['setup']
+assert len(tests['scenarios']) == 12 and tests['setup']
 platform = next(p for p in params if p['name'] == 'platform')
 assert [x['value'] for x in platform['selectItems']] == ['vtex','vtexio','shopify','nuvemshop','magento1x','magento2x','wordpress']
 assert next(p for p in params if p['name']=='env')['defaultValue'] == 'production'
+mode = next(p for p in params if p['name']=='trackingMode')
+assert mode['defaultValue'] == 'live' and [v['value'] for v in mode['selectItems']] == ['live', 'dry-run']
 for name in ('accountId','cookieDomain','platform'):
  assert any(v['type']=='NON_EMPTY' for v in next(p for p in params if p['name']==name)['valueValidators'])
 image = base64.b64decode(info['brand']['thumbnail'].split(',',1)[1], validate=True)
@@ -29,7 +31,7 @@ actual = {}
 for item in values('access_globals')['listItem']:
  fields = {k['string']: v.get('string',v.get('boolean')) for k,v in zip(item['mapKey'],item['mapValue'])}; actual[fields['key']] = (fields['read'],fields['write'],fields['execute'])
 expected = {k:(True,True,False) for k in ('beonobject','beon','beon.q','beon.l','beonConfig')}
-expected.update({k:(True,False,False) for k in ('beonly._coreVersion','beonly.account','beonly.platform','beonly.env','beonly.cookiedomain','beonly.inited','beone.inited')})
+expected.update({k:(True,False,False) for k in ('beonly._coreVersion','beonly.account','beonly.platform','beonly.env','beonly.cookiedomain','beonly.inited','beone.inited','beonly.trackingMode')})
 assert actual == expected
 js = sections['SANDBOXED_JS_FOR_WEB_TEMPLATE']
 for api,mode in [('copyFromWindow',0),('setInWindow',1)]:

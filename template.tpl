@@ -131,6 +131,24 @@ ___TEMPLATE_PARAMETERS___
         "type": "NON_EMPTY"
       }
     ]
+  },
+  {
+    "type": "SELECT",
+    "name": "trackingMode",
+    "displayName": "Modo de rastreamento",
+    "selectItems": [
+      {
+        "value": "live",
+        "displayValue": "Envio real (live)"
+      },
+      {
+        "value": "dry-run",
+        "displayValue": "Somente auditoria (dry-run)"
+      }
+    ],
+    "simpleValueType": true,
+    "defaultValue": "live",
+    "help": "Envio real permite o rastreamento. Somente auditoria impede o envio de todo o rastreamento pela runtime compatível."
   }
 ]
 
@@ -149,6 +167,7 @@ const accountId = data.accountId;
 const platform = data.platform;
 const env = data.env || 'production';
 const cookieDomain = data.cookieDomain || '';
+const trackingMode = data.trackingMode === undefined ? 'live' : data.trackingMode;
 
 function fail(message) {
   log('[Beonly] ' + message);
@@ -160,7 +179,8 @@ function matchesConfig(config) {
     config.accountId === accountId &&
     config.platform === platform &&
     config.env === env &&
-    config.cookieDomain === cookieDomain;
+    config.cookieDomain === cookieDomain &&
+    (config.trackingMode === undefined ? 'live' : config.trackingMode) === trackingMode;
 }
 
 // Valida os campos antes de modificar os globais.
@@ -180,6 +200,11 @@ if (env !== 'production' && env !== 'staging') {
   return;
 }
 
+if (trackingMode !== 'live' && trackingMode !== 'dry-run') {
+  fail('Modo de rastreamento inválido. Use live ou dry-run.');
+  return;
+}
+
 // Preserva integrações que já usam outro nome global.
 const existingName = copyFromWindow('beonobject');
 
@@ -196,7 +221,8 @@ if (coreVersion === 6) {
     accountId: copyFromWindow('beonly.account'),
     platform: copyFromWindow('beonly.platform'),
     env: copyFromWindow('beonly.env'),
-    cookieDomain: copyFromWindow('beonly.cookiedomain')
+    cookieDomain: copyFromWindow('beonly.cookiedomain'),
+    trackingMode: copyFromWindow('beonly.trackingMode')
   };
 
   if (
@@ -248,7 +274,8 @@ if (!pendingConfig) {
     accountId: accountId,
     platform: platform,
     env: env,
-    cookieDomain: cookieDomain
+    cookieDomain: cookieDomain,
+    trackingMode: trackingMode
   }, false);
 
   if (!configured) {
@@ -779,6 +806,45 @@ ___WEB_PERMISSIONS___
                     "boolean": false
                   }
                 ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "beonly.trackingMode"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
               }
             ]
           }
@@ -902,6 +968,67 @@ scenarios:
     assertThat(loads).hasLength(1);
     assertApi('gtmOnFailure').wasCalled();
     assertApi('gtmOnSuccess').wasNotCalled();
+- name: Modo ausente usa live
+  code: |-
+    runCode(input);
+    assertThat(globals.beonConfig.trackingMode).isEqualTo('live');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: Modo dry-run é registrado
+  code: |-
+    input.trackingMode = 'dry-run';
+    runCode(input);
+    assertThat(globals.beonConfig.trackingMode).isEqualTo('dry-run');
+    assertApi('gtmOnSuccess').wasCalled();
+- name: Modo pendente diferente falha
+  code: |-
+    input.trackingMode = 'dry-run';
+    globals.beonConfig = {accountId: input.accountId, platform: input.platform, env: input.env, cookieDomain: input.cookieDomain};
+    runCode(input);
+    assertApi('gtmOnFailure').wasCalled();
+    assertApi('setInWindow').wasNotCalled();
+- name: Runtime legada aceita live
+  code: |-
+    globals['beonly._coreVersion'] = 6;
+    globals['beonly.inited'] = true;
+    globals['beonly.account'] = input.accountId;
+    globals['beonly.platform'] = input.platform;
+    globals['beonly.env'] = input.env;
+    globals['beonly.cookiedomain'] = input.cookieDomain;
+    runCode(input);
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('setInWindow').wasNotCalled();
+- name: Runtime legada rejeita dry-run
+  code: |-
+    input.trackingMode = 'dry-run';
+    globals['beonly._coreVersion'] = 6;
+    globals['beonly.inited'] = true;
+    globals['beonly.account'] = input.accountId;
+    globals['beonly.platform'] = input.platform;
+    globals['beonly.env'] = input.env;
+    globals['beonly.cookiedomain'] = input.cookieDomain;
+    runCode(input);
+    assertApi('gtmOnFailure').wasCalled();
+    assertApi('setInWindow').wasNotCalled();
+- name: Runtime dry-run aceita configuração igual
+  code: |-
+    input.trackingMode = 'dry-run';
+    globals['beonly._coreVersion'] = 6;
+    globals['beonly.inited'] = true;
+    globals['beonly.account'] = input.accountId;
+    globals['beonly.platform'] = input.platform;
+    globals['beonly.env'] = input.env;
+    globals['beonly.cookiedomain'] = input.cookieDomain;
+    globals['beonly.trackingMode'] = 'dry-run';
+    runCode(input);
+    assertApi('gtmOnSuccess').wasCalled();
+    assertApi('setInWindow').wasNotCalled();
+- name: Modo inválido falha antes de alterar globais
+  code: |-
+    input.trackingMode = 'invalid';
+    runCode(input);
+    assertApi('gtmOnFailure').wasCalled();
+    assertApi('setInWindow').wasNotCalled();
+    assertThat(loads).isEmpty();
 setup: |-
   const input = {
     accountId: 'tenant-teste',
